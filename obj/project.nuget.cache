@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "zDha7fLvey0=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Administrador\\Documents\\PROJETOS\\MeuLetterboxd\\MeuLetterboxd.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Administrador\\.nuget\\packages\\npgsql\\10.0.3\\npgsql.10.0.3.nupkg.sha512"
+  ],
+  "logs": []
+}

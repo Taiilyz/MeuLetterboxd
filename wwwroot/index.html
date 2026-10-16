@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Letterboxd & TV</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background: #14181c; color: #9ab; margin: 0; padding: 15px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        h1 { color: #fff; text-align: center; margin-bottom: 20px; font-size: 1.8rem; }
+        .card { background: #1e252c; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .form-group { position: relative; margin-bottom: 12px; }
+        label { display: block; color: #fff; font-size: 0.85rem; margin-bottom: 4px; font-weight: bold; }
+        input, select, textarea, button { width: 100%; padding: 10px; border-radius: 6px; border: none; box-sizing: border-box; font-family: inherit; }
+        input, select, textarea { background: #2c3440; color: #fff; }
+        textarea { resize: vertical; min-height: 60px; }
+        button { background: #00e054; color: #000; font-weight: bold; cursor: pointer; border: none; transition: 0.2s; }
+        button:hover { background: #00b341; }
+        
+        .suggestions { position: absolute; top: 100%; left: 0; right: 0; background: #2c3440; border-radius: 0 0 6px 6px; z-index: 100; max-height: 250px; overflow-y: auto; box-shadow: 0 6px 12px rgba(0,0,0,0.5); }
+        .suggestion-item { padding: 10px; display: flex; align-items: center; gap: 10px; cursor: pointer; border-bottom: 1px solid #1e252c; }
+        .suggestion-item:hover { background: #394351; }
+        .suggestion-item img { width: 35px; height: 50px; object-fit: cover; border-radius: 4px; background: #14181c; }
+
+        .preview-box { display: flex; gap: 12px; background: #242c34; padding: 10px; border-radius: 6px; margin-bottom: 12px; }
+        .preview-box img { width: 60px; height: 90px; object-fit: cover; border-radius: 4px; }
+        .preview-details { color: #fff; font-size: 0.9rem; }
+        .preview-details small { color: #9ab; display: block; margin-top: 4px; }
+
+        .tag-tipo { display: inline-block; background: #394351; color: #00e054; font-size: 0.7rem; font-weight: bold; padding: 2px 6px; border-radius: 4px; margin-left: 6px; }
+
+        .filter-tabs { display: flex; gap: 8px; margin-bottom: 15px; }
+        .tab-btn { background: #1e252c; color: #9ab; padding: 8px 12px; border-radius: 6px; cursor: pointer; flex: 1; text-align: center; font-size: 0.9rem; }
+        .tab-btn.active { background: #00e054; color: #000; font-weight: bold; }
+        
+        .filme-card { background: #1e252c; padding: 12px; border-radius: 8px; margin-bottom: 12px; display: flex; gap: 12px; }
+        .filme-card img { width: 70px; height: 105px; object-fit: cover; border-radius: 6px; background: #2c3440; }
+        .filme-info { flex: 1; }
+        .filme-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .filme-titulo { color: #fff; font-weight: bold; font-size: 1.05rem; }
+        .filme-ano { color: #678; font-weight: normal; }
+        .filme-nota { background: #00e054; color: #000; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.85rem; white-space: nowrap; }
+        .filme-status { display: inline-block; background: #2c3440; color: #40bcf4; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin: 4px 0; }
+        .filme-comentario { font-size: 0.85rem; color: #bcd; margin-top: 6px; font-style: italic; background: #14181c; padding: 6px 10px; border-radius: 4px; }
+        .filme-acoes { margin-top: 8px; display: flex; gap: 8px; }
+        .btn-acao { padding: 4px 8px; font-size: 0.75rem; border-radius: 4px; background: #2c3440; color: #fff; border: none; cursor: pointer; width: auto; }
+        .btn-danger { background: #e53935; color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 Meu Letterboxd & Séries</h1>
+
+        <div class="card">
+            <div class="form-group">
+                <label>Buscar Filme ou Série (Autocomplete em tempo real):</label>
+                <input type="text" id="titulo" placeholder="Ex: Breaking Bad, Matrix, Stranger Things..." oninput="agendarBusca(this.value)" autocomplete="off">
+                <div id="suggestions" class="suggestions" style="display:none;"></div>
+            </div>
+
+            <div id="preview" class="preview-box" style="display:none;">
+                <img id="prevImg" src="" alt="Poster">
+                <div class="preview-details">
+                    <strong id="prevTitulo"></strong> <span id="prevAno" style="color:#9ab;"></span> <span id="prevTipo" class="tag-tipo"></span>
+                    <small id="prevSinopse"></small>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <div class="form-group" style="flex:1;">
+                    <label>Status:</label>
+                    <select id="status">
+                        <option value="Assistido">Assistido</option>
+                        <option value="Quero Assistir">Quero Assistir</option>
+                    </select>
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label>Nota (1 a 10):</label>
+                    <select id="nota">
+                        <option value="10">10 ★★★★★</option>
+                        <option value="9">9 ★★★★☆</option>
+                        <option value="8">8 ★★★★☆</option>
+                        <option value="7">7 ★★★☆☆</option>
+                        <option value="6">6 ★★★☆☆</option>
+                        <option value="5">5 ★★☆☆☆</option>
+                        <option value="4">4 ★★☆☆☆</option>
+                        <option value="3">3 ★☆☆☆☆</option>
+                        <option value="2">2 ★☆☆☆☆</option>
+                        <option value="1">1 ☆☆☆☆☆</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Seu Comentário / Resenha:</label>
+                <textarea id="comentario" placeholder="Escreva o que achou..."></textarea>
+            </div>
+
+            <button onclick="salvarFilme()">Adicionar ao Catálogo</button>
+        </div>
+
+        <div class="filter-tabs">
+            <div class="tab-btn active" onclick="filtrarStatus('Todos', this)">Todos</div>
+            <div class="tab-btn" onclick="filtrarStatus('Assistido', this)">Assistidos</div>
+            <div class="tab-btn" onclick="filtrarStatus('Quero Assistir', this)">Quero Assistir</div>
+        </div>
+
+        <div class="form-group">
+            <input type="text" id="buscaLocal" placeholder="🔍 Pesquisar na minha lista..." oninput="renderizarFilmes()">
+        </div>
+
+        <div id="listaFilmes"></div>
+    </div>
+
+    <script>
+        let filmesSalvos = [];
+        let sugestoesAtuais = [];
+        let filmeSelecionadoMeta = { posterUrl: '', sinopse: '', ano: '', tipo: 'Filme' };
+        let statusFiltroAtual = 'Todos';
+        let debounceTimer = null;
+
+        function agendarBusca(query) {
+            clearTimeout(debounceTimer);
+            const sugBox = document.getElementById('suggestions');
+
+            if (!query || query.trim().length < 2) {
+                sugBox.style.display = 'none';
+                return;
+            }
+
+            sugBox.innerHTML = '<div style="padding:12px; color:#9ab; text-align:center;">🔍 Procurando filmes e séries...</div>';
+            sugBox.style.display = 'block';
+
+            debounceTimer = setTimeout(() => {
+                buscarFilmesAPI(query.trim());
+            }, 300);
+        }
+
+        async function buscarFilmesAPI(query) {
+            const sugBox = document.getElementById('suggestions');
+
+            try {
+                const res = await fetch(`/api/buscar-filmes?q=${encodeURIComponent(query)}`);
+                sugestoesAtuais = await res.json();
+                
+                if (!sugestoesAtuais || sugestoesAtuais.length === 0) {
+                    sugBox.innerHTML = '<div style="padding:12px; color:#9ab; text-align:center;">Nenhum resultado encontrado.</div>';
+                    sugBox.style.display = 'block';
+                    return;
+                }
+
+                sugBox.innerHTML = sugestoesAtuais.map((f, idx) => `
+                    <div class="suggestion-item" onclick="selecionarFilmeIndex(${idx})">
+                        <img src="${f.poster || 'https://via.placeholder.com/35x50?text=No+Img'}">
+                        <div>
+                            <strong style="color:#fff;">${f.titulo}</strong>
+                            <small style="display:block; color:#9ab;">${f.ano ? f.ano : ''} <span class="tag-tipo">${f.tipo === 'Série' ? '📺 Série' : '🎬 Filme'}</span></small>
+                        </div>
+                    </div>
+                `).join('');
+                sugBox.style.display = 'block';
+            } catch (err) {
+                console.error("Erro na busca:", err);
+                sugBox.innerHTML = '<div style="padding:12px; color:#e53935; text-align:center;">Erro ao conectar com o servidor.</div>';
+            }
+        }
+
+        function selecionarFilmeIndex(index) {
+            const f = sugestoesAtuais[index];
+            if (!f) return;
+
+            document.getElementById('titulo').value = f.titulo;
+            document.getElementById('suggestions').style.display = 'none';
+
+            filmeSelecionadoMeta = { posterUrl: f.poster, sinopse: f.sinopse, ano: f.ano, tipo: f.tipo };
+
+            document.getElementById('prevImg').src = f.poster || 'https://via.placeholder.com/60x90?text=Sem+Capa';
+            document.getElementById('prevTitulo').innerText = f.titulo;
+            document.getElementById('prevAno').innerText = f.ano ? `(${f.ano})` : '';
+            document.getElementById('prevTipo').innerText = f.tipo === 'Série' ? '📺 Série' : '🎬 Filme';
+            document.getElementById('prevSinopse').innerText = f.sinopse ? f.sinopse.substring(0, 110) + '...' : 'Sem sinopse disponível.';
+            document.getElementById('preview').style.display = 'flex';
+        }
+
+        document.addEventListener('click', function(e) {
+            const sugBox = document.getElementById('suggestions');
+            const inputTitulo = document.getElementById('titulo');
+            if (sugBox && !sugBox.contains(e.target) && e.target !== inputTitulo) {
+                sugBox.style.display = 'none';
+            }
+        });
+
+        async function carregarFilmes() {
+            const res = await fetch('/api/filmes');
+            filmesSalvos = await res.json();
+            renderizarFilmes();
+        }
+
+        function renderizarFilmes() {
+            const busca = document.getElementById('buscaLocal').value.toLowerCase();
+            const container = document.getElementById('listaFilmes');
+
+            const filtrados = filmesSalvos.filter(f => {
+                const bateStatus = (statusFiltroAtual === 'Todos') || (f.status === statusFiltroAtual);
+                const bateBusca = f.titulo.toLowerCase().includes(busca) || (f.comentario && f.comentario.toLowerCase().includes(busca));
+                return bateStatus && bateBusca;
+            });
+
+            if (filtrados.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:#678; margin-top:20px;">Nenhum item cadastrado nesta aba.</p>';
+                return;
+            }
+
+            container.innerHTML = filtrados.map(f => `
+                <div class="filme-card">
+                    <img src="${f.poster_url || 'https://via.placeholder.com/70x105?text=Poster'}" alt="Capa">
+                    <div class="filme-info">
+                        <div class="filme-header">
+                            <div class="filme-titulo">
+                                ${f.titulo} <span class="filme-ano">${f.ano ? '(' + f.ano + ')' : ''}</span>
+                                <span class="tag-tipo">${f.tipo === 'Série' ? '📺 Série' : '🎬 Filme'}</span>
+                            </div>
+                            <div class="filme-nota">★ ${f.nota}</div>
+                        </div>
+                        <span class="filme-status">${f.status}</span>
+                        ${f.comentario ? `<div class="filme-comentario">"${f.comentario}"</div>` : ''}
+                        
+                        <div class="filme-acoes">
+                            <button class="btn-acao" onclick="editarFilme(${f.id}, '${f.status}', ${f.nota}, \`${(f.comentario || '').replace(/`/g, '\\`')}\`)">✏️ Editar</button>
+                            <button class="btn-acao btn-danger" onclick="excluirFilme(${f.id})">🗑️ Excluir</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filtrarStatus(status, elemento) {
+            statusFiltroAtual = status;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            elemento.classList.add('active');
+            renderizarFilmes();
+        }
+
+        async function salvarFilme() {
+            const titulo = document.getElementById('titulo').value;
+            const status = document.getElementById('status').value;
+            const nota = parseFloat(document.getElementById('nota').value);
+            const comentario = document.getElementById('comentario').value;
+
+            if (!titulo) return alert('Digite o nome de um filme ou série!');
+
+            await fetch('/api/filmes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    titulo: titulo,
+                    status: status,
+                    nota: nota,
+                    comentario: comentario,
+                    posterUrl: filmeSelecionadoMeta.posterUrl,
+                    sinopse: filmeSelecionadoMeta.sinopse,
+                    ano: filmeSelecionadoMeta.ano,
+                    tipo: filmeSelecionadoMeta.tipo
+                })
+            });
+
+            document.getElementById('titulo').value = '';
+            document.getElementById('comentario').value = '';
+            document.getElementById('preview').style.display = 'none';
+            filmeSelecionadoMeta = { posterUrl: '', sinopse: '', ano: '', tipo: 'Filme' };
+
+            carregarFilmes();
+        }
+
+        async function editarFilme(id, statusAtual, notaAtual, comentarioAtual) {
+            const novoStatus = prompt("Alterar Status (Assistido ou Quero Assistir):", statusAtual);
+            if (!novoStatus) return;
+
+            const novaNotaStr = prompt("Alterar Nota (1 a 10):", notaAtual);
+            if (!novaNotaStr) return;
+            const novaNota = parseFloat(novaNotaStr);
+
+            const novoComentario = prompt("Editar Comentário / Resenha:", comentarioAtual);
+
+            await fetch(`/api/filmes/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    status: novoStatus,
+                    nota: novaNota,
+                    comentario: novoComentario
+                })
+            });
+
+            carregarFilmes();
+        }
+
+        async function excluirFilme(id) {
+            if (!confirm('Deseja realmente remover este item?')) return;
+
+            await fetch(`/api/filmes/${id}`, { method: 'DELETE' });
+            carregarFilmes();
+        }
+
+        carregarFilmes();
+    </script>
+</body>
+</html>
