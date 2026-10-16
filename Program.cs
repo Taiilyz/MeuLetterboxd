@@ -2,15 +2,17 @@ using Npgsql;
 using System.Net.Http.Json;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Lê a Connection String do Render/Neon em produção; se não existir, usa o localhost para desenvolvimento local
+string connString = builder.Configuration.GetConnectionString("DefaultConnection") 
+    ?? "Host=localhost;Username=postgres;Password=emily2003;Database=meus_projetos";
+
+string tmdbApiKey = "112e19db2a6ee988ed24f9024019d75b";
+
 var app = builder.Build();
 
 app.UseDefaultFiles();
 app.UseStaticFiles();
-
-string palavraPassePostgres = "emily2003";
-string tmdbApiKey = "112e19db2a6ee988ed24f9024019d75b";  
-
-string connString = $"Host=localhost;Username=postgres;Password={palavraPassePostgres};Database=meus_projetos";
 
 // Inicializa a tabela no PostgreSQL e adiciona coluna para tipo (Filme / Série)
 using (var conn = new NpgsqlConnection(connString))
@@ -46,7 +48,6 @@ app.MapGet("/api/buscar-filmes", async (string q) =>
     using var client = new HttpClient();
     client.Timeout = TimeSpan.FromSeconds(5);
 
-    // Endpoint /search/multi traz filmes e séries juntos
     var url = $"https://api.themoviedb.org/3/search/multi?api_key={tmdbApiKey}&language=pt-BR&query={Uri.EscapeDataString(q.Trim())}&page=1";
 
     try
@@ -59,7 +60,6 @@ app.MapGet("/api/buscar-filmes", async (string q) =>
             {
                 string mediaType = f.TryGetProperty("media_type", out var mt) ? mt.GetString() ?? "" : "";
                 
-                // Filtra apenas Filmes (movie) e Séries (tv), ignorando pessoas/atores
                 if (mediaType != "movie" && mediaType != "tv") continue;
 
                 string titulo = "";
@@ -176,7 +176,7 @@ app.MapDelete("/api/filmes/{id:int}", (int id) =>
     return Results.Ok(new { mensagem = "Eliminado!" });
 });
 
-app.Run("http://0.0.0.0:5000");
+app.Run();
 
 record FilmeInput(string Titulo, string Status, decimal Nota, string? Comentario, string? PosterUrl, string? Sinopse, string? Ano, string? Tipo);
 record FilmeUpdateInput(string Status, decimal Nota, string? Comentario);
